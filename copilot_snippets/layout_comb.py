@@ -6,7 +6,6 @@ from tkinter import filedialog, messagebox, ttk
 
 import customtkinter as ctk
 from logic.midi import get_preview_data, organize_midi_folders
-from version import __version__
 
 # ─────────────────────────────────────────────────────────────
 # Genre coloring config (dynamic)
@@ -42,24 +41,12 @@ def show_naming_help():
     )
 
 
-def show_genre_color_key():
-    if not GENRE_COLORS:
-        messagebox.showinfo("Genre Colors", "No genres detected yet.")
-        return
-    lines = [f"{genre.title()}: {color}" for genre, color in GENRE_COLORS.items()]
-    messagebox.showinfo("Genre Colors", "\n".join(lines))
-
-
 def launch_gui():
     ctk.set_appearance_mode("dark")
     ctk.set_default_color_theme("blue")
 
-    from version import __version__
-
     root = ctk.CTk()
-
-    root.title(f"MSPT_PackPilot v{__version__}")
-
+    root.title("MSPT PackPilot")
     root.geometry("800x600")
 
     # Load settings
@@ -73,9 +60,7 @@ def launch_gui():
             "naming": "Pack-MIDI",
             "dry_run": False,
             "font_size": 12,
-            "genre_colors": {},
         }
-    GENRE_COLORS.update(settings.get("genre_colors", {}))
 
     # Font for Treeview
     tree_font = tkfont.Font(family="Segoe UI", size=settings.get("font_size", 12))
@@ -105,7 +90,6 @@ def launch_gui():
             "naming": naming_var.get(),
             "dry_run": dry_run_var.get(),
             "font_size": font_size_var.get(),
-            "genre_colors": GENRE_COLORS,
         }
         with open(settings_path, "w", encoding="utf-8") as f:
             json.dump(new_settings, f, indent=4)
@@ -149,19 +133,14 @@ def launch_gui():
             pack_name = os.path.basename(os.path.dirname(src))
             folder_name = os.path.basename(src)
 
-            genre_color = get_genre_color(pack_name)
-            genre_tag = pack_name  # Unique tag per pack
-
             if pack_name not in pack_nodes:
                 pack_nodes[pack_name] = tree.insert(
-                    "", "end", text=pack_name, values=("", ""), tags=(genre_tag,)
+                    "", "end", text=pack_name, values=("", "")
                 )
-            if genre_color:
-                tree.tag_configure(genre_tag, background=genre_color)
 
-                tree.insert(
-                    pack_nodes[pack_name], "end", text="", values=(folder_name, dest)
-                )
+            tree.insert(
+                pack_nodes[pack_name], "end", text="", values=(folder_name, dest)
+            )
 
     # Layout
     ctk.CTkLabel(root, text="Source Folder").grid(
@@ -235,9 +214,6 @@ def launch_gui():
 
     ctk.CTkButton(root, text="Preview", command=populate_tree).grid(
         row=8, column=0, pady=20
-    )
-    ctk.CTkButton(root, text="Show Genre Colors", command=show_genre_color_key).grid(
-        row=8, column=3, padx=10
     )
     ctk.CTkButton(
         root,
