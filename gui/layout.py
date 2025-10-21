@@ -5,8 +5,9 @@ import tkinter.font as tkfont
 from tkinter import filedialog, messagebox, ttk
 
 import customtkinter as ctk
-from logic.midi import get_preview_data, organize_midi_folders
+from core.midi_handler import get_preview_data, organize_midi_folder
 from version import __version__
+from core.midi_handler import organize_midi_folder
 
 # ─────────────────────────────────────────────────────────────
 # Genre coloring config (dynamic)
@@ -98,6 +99,7 @@ def launch_gui():
     genre_filter_var = ctk.StringVar(value="All")
     pack_filter_var = ctk.StringVar()
     output_mode_var = ctk.StringVar(value="Flat")
+    dry_run_var = ctk.BooleanVar(value=False)
 
     def save_settings():
         new_settings = {
@@ -218,6 +220,9 @@ def launch_gui():
     ctk.CTkLabel(root, text="Output Mode").grid(
         row=6, column=0, padx=10, pady=5, sticky="w"
     )
+    ctk.CTkCheckBox(root, text="Dry Run (Preview Only)", variable=dry_run_var).grid(
+        row=6, column=4, padx=10, pady=5
+    )
     ctk.CTkComboBox(
         root,
         variable=output_mode_var,
@@ -244,19 +249,24 @@ def launch_gui():
         text="Organize",
         command=lambda: [
             save_settings(),
-            organize_midi_folders(
+            organize_midi_folder(
                 source_var.get(),
                 destination_var.get(),
-                structure_var.get(),
-                naming_var.get(),
-                dry_run_var.get(),
+                mode=output_mode_var.get(),
+                structure=structure_var.get(),
+                naming=naming_var.get(),
+                dry_run=dry_run_var.get(),
+                copy_icons=copy_icons_var.get(),
             ),
         ],
     ).grid(row=8, column=1)
     ctk.CTkButton(root, text="Apply Font Size", command=update_font_size).grid(
         row=8, column=2, pady=20
     )
-
+    copy_icons_var = ctk.BooleanVar(value=True)
+    ctk.CTkCheckBox(
+        root, text="Copy Folder Icons (.ico/.ini)", variable=copy_icons_var
+    ).grid(row=6, column=2, padx=10, pady=5)
     # Treeview frame
     tree_frame = ctk.CTkFrame(root)
     tree_frame.grid(row=9, column=0, columnspan=3, padx=10, pady=10, sticky="nsew")
