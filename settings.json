@@ -1,6 +1,18 @@
 {
-    "structure": "Flat",
+    "structure": "Nested",
     "naming": "Pack-MIDI",
     "dry_run": false,
-    "font_size": 21
+    "font_size": 23,
+    "genre_colors": {
+        "demo 01 midi multitrack": "#C8C099",
+        "demo 02 midi multitrack": "#E9E1E4",
+        "demo 03 midi multitrack": "#ECEFB8",
+        "demo 04 midi multitrack": "#CDE8FD",
+        "demo 05 midi multitrack": "#F8A5C6",
+        "trance new world for serum": "#D0B1E7",
+        "trance sci": "#BAD1BD",
+        "rct_midi_files": "#EEA3BC",
+        "loopmasters ": "#FCE9DD",
+        "tre_midi": "#C996E7"
+    }
 }

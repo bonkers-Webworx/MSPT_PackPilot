@@ -1,37 +1,10 @@
 import json
 import os
-import random
 import tkinter.font as tkfont
 from tkinter import filedialog, messagebox, ttk
 
 import customtkinter as ctk
-from core.midi_handler import get_preview_data, organize_midi_folder
-from version import __version__
-from core.midi_handler import organize_midi_folder
-
-# ─────────────────────────────────────────────────────────────
-# Genre coloring config (dynamic)
-# ─────────────────────────────────────────────────────────────
-GENRE_COLORS = {}
-
-
-def generate_pastel_color():
-    r = random.randint(150, 255)
-    g = random.randint(150, 255)
-    b = random.randint(150, 255)
-    return f"#{r:02X}{g:02X}{b:02X}"
-
-
-def get_genre_color(name):
-    name_lower = name.lower()
-    for genre in GENRE_COLORS:
-        if genre in name_lower:
-            return GENRE_COLORS[genre]
-
-    possible_genre = name_lower.split("-")[0]
-    if possible_genre not in GENRE_COLORS:
-        GENRE_COLORS[possible_genre] = generate_pastel_color()
-    return GENRE_COLORS[possible_genre]
+from logic.midi import get_preview_data, organize_midi_folders
 
 
 def show_naming_help():
@@ -43,24 +16,12 @@ def show_naming_help():
     )
 
 
-def show_genre_color_key():
-    if not GENRE_COLORS:
-        messagebox.showinfo("Genre Colors", "No genres detected yet.")
-        return
-    lines = [f"{genre.title()}: {color}" for genre, color in GENRE_COLORS.items()]
-    messagebox.showinfo("Genre Colors", "\n".join(lines))
-
-
 def launch_gui():
     ctk.set_appearance_mode("dark")
     ctk.set_default_color_theme("blue")
 
-    from version import __version__
-
     root = ctk.CTk()
-
-    root.title(f"MSPT_PackPilot v{__version__}")
-
+    root.title("MSPT PackPilot")
     root.geometry("800x600")
 
     # Load settings
@@ -74,9 +35,7 @@ def launch_gui():
             "naming": "Pack-MIDI",
             "dry_run": False,
             "font_size": 12,
-            "genre_colors": {},
         }
-    GENRE_COLORS.update(settings.get("genre_colors", {}))
 
     # Font for Treeview
     tree_font = tkfont.Font(family="Segoe UI", size=settings.get("font_size", 12))
@@ -99,7 +58,6 @@ def launch_gui():
     genre_filter_var = ctk.StringVar(value="All")
     pack_filter_var = ctk.StringVar()
     output_mode_var = ctk.StringVar(value="Flat")
-    dry_run_var = ctk.BooleanVar(value=False)
 
     def save_settings():
         new_settings = {
@@ -107,7 +65,6 @@ def launch_gui():
             "naming": naming_var.get(),
             "dry_run": dry_run_var.get(),
             "font_size": font_size_var.get(),
-            "genre_colors": GENRE_COLORS,
         }
         with open(settings_path, "w", encoding="utf-8") as f:
             json.dump(new_settings, f, indent=4)
@@ -151,19 +108,14 @@ def launch_gui():
             pack_name = os.path.basename(os.path.dirname(src))
             folder_name = os.path.basename(src)
 
-            genre_color = get_genre_color(pack_name)
-            genre_tag = pack_name  # Unique tag per pack
-
             if pack_name not in pack_nodes:
                 pack_nodes[pack_name] = tree.insert(
-                    "", "end", text=pack_name, values=("", ""), tags=(genre_tag,)
+                    "", "end", text=pack_name, values=("", "")
                 )
-            if genre_color:
-                tree.tag_configure(genre_tag, background=genre_color)
 
-                tree.insert(
-                    pack_nodes[pack_name], "end", text="", values=(folder_name, dest)
-                )
+            tree.insert(
+                pack_nodes[pack_name], "end", text="", values=(folder_name, dest)
+            )
 
     # Layout
     ctk.CTkLabel(root, text="Source Folder").grid(
@@ -220,9 +172,6 @@ def launch_gui():
     ctk.CTkLabel(root, text="Output Mode").grid(
         row=6, column=0, padx=10, pady=5, sticky="w"
     )
-    ctk.CTkCheckBox(root, text="Dry Run (Preview Only)", variable=dry_run_var).grid(
-        row=6, column=4, padx=10, pady=5
-    )
     ctk.CTkComboBox(
         root,
         variable=output_mode_var,
@@ -241,32 +190,24 @@ def launch_gui():
     ctk.CTkButton(root, text="Preview", command=populate_tree).grid(
         row=8, column=0, pady=20
     )
-    ctk.CTkButton(root, text="Show Genre Colors", command=show_genre_color_key).grid(
-        row=8, column=3, padx=10
-    )
     ctk.CTkButton(
         root,
         text="Organize",
         command=lambda: [
             save_settings(),
-            organize_midi_folder(
+            organize_midi_folders(
                 source_var.get(),
                 destination_var.get(),
-                mode=output_mode_var.get(),
-                structure=structure_var.get(),
-                naming=naming_var.get(),
-                dry_run=dry_run_var.get(),
-                copy_icons=copy_icons_var.get(),
+                structure_var.get(),
+                naming_var.get(),
+                dry_run_var.get(),
             ),
         ],
     ).grid(row=8, column=1)
     ctk.CTkButton(root, text="Apply Font Size", command=update_font_size).grid(
         row=8, column=2, pady=20
     )
-    copy_icons_var = ctk.BooleanVar(value=True)
-    ctk.CTkCheckBox(
-        root, text="Copy Folder Icons (.ico/.ini)", variable=copy_icons_var
-    ).grid(row=6, column=2, padx=10, pady=5)
+
     # Treeview frame
     tree_frame = ctk.CTkFrame(root)
     tree_frame.grid(row=9, column=0, columnspan=3, padx=10, pady=10, sticky="nsew")
